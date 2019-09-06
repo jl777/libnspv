@@ -158,7 +158,8 @@ cd libnspv
 ```
 ./autogen.sh
 ./configure
-make check
+./onetime # this compiles the cryptoconditions support in src/tools/cryptoconditions
+make
 ```
 
 #### Pure library without wallet support
