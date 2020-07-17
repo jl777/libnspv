@@ -86,6 +86,7 @@ char *cc_conditionUri(const CC *cond) {
 
 ConditionTypes_t asnSubtypes(uint32_t mask) {
     ConditionTypes_t types;
+    memset(&types, '\0', sizeof(types));
     uint8_t buf[4] = {0,0,0,0};
     int maxId = 0;
 
@@ -290,10 +291,10 @@ int cc_verify(const struct CC *cond, const unsigned char *msg, size_t msgLength,
     unsigned char msgHash[32];
     if (doHashMsg) sha256(msg, msgLength, msgHash);
     else memcpy(msgHash, msg, 32);
-    int32_t z;
-    for (z=0; z<32; z++)
-        fprintf(stderr,"%02x",msgHash[z]);
-    fprintf(stderr," msgHash msglen.%d\n",msgLength);
+    //int32_t z;
+    //for (z=0; z<32; z++)
+    //    fprintf(stderr,"%02x",msgHash[z]);
+    //fprintf(stderr," msgHash msglen.%d\n",msgLength);
 
     if (!cc_secp256k1VerifyTreeMsg32(cond, msgHash)) {
         fprintf(stderr," cc_verify error C\n");

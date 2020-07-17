@@ -34,6 +34,10 @@ def setup_module():
     if not addr_send or not wif_real:
         pytest.exit("Please check test wif and address variables availability")
 
+    url = "http://127.0.0.1:12986"  # set correct port for chosen chain
+    userpass = "userpass"
+    coin = "ILN"
+    call = NRC(url, userpass)
     chain_params = {"KMD": {
                             'tx_list_address': 'RGShWG446Pv24CKzzxjA23obrzYwNbs1kA',
                             'min_chain_height': 1468080,

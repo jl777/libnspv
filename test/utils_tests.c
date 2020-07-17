@@ -96,3 +96,9 @@ void test_utils()
     utils_uint256_sethex("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943", hash_rev);
     utils_uint256_sethex("0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206", hash_rev);
 }
+
+// logging modified in libbtc
+FILE *nspv_get_fdebug()
+{
+    return stderr;
+}

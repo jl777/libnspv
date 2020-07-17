@@ -75,7 +75,7 @@ const btc_chainparams btc_chainparams_regtest = {
     18444,18443,
     {0},
     600,
-    BTC_PROTOCOL_VERSION,
+    17008, //BTC_PROTOCOL_VERSION,
     1024*1024,
     0,0,0,
 };

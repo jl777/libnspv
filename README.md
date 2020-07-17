@@ -103,8 +103,8 @@ The application will try to connect to max 6 peers, send the transaction two two
 
     ./bitcoin-send-tx -d -s 5 -i 192.168.1.110:8333,127.0.0.1:8333 <txhex>
 
-How to Build
-----------------
+How to Build libnspv with libbtc and tools
+------------------------------------------
 
 You will need to have some dev tools prior to building libnspv for your system.
 
@@ -123,7 +123,7 @@ brew upgrade
 brew install libsodium libevent automake libtool git wget
 ```
 
-##### Intall using brew
+##### Install using brew
 
 ```shell
 brew tap jl777/homebrew-libnspv
@@ -154,17 +154,51 @@ cd libnspv
 
 ## Now you can follow the next instructions to compile and update
 
-#### Full library including CLI tool and wallet database
+### First build cryptoconditions library
+
+#### MacOS & Linux
+
+```
+cd ./src/tools/cryptoconditions
+./autogen.sh
+./configure
+make
+```
+
+#### Windows
+
+```
+cd ./src/tools/cryptoconditions
+./build_win.sh
+```
+
+
+### Full libnspv library including CLI tool and wallet database
+
+Go to libnspv directory and run:
+
+On Linux and MacOS:
 
 ```
 ./autogen.sh
 ./configure
 make check
 ```
+On Windows run 
+```
+./build_win.sh
+```
 
-#### Pure library without wallet support
 
-The nspv client doesn't follow the options `--disable-wallet --disable-tools` as it needs some of the wallet functions as all the nspv API is always supported
+### Pure library without wallet support
+
+Go to libnspv directory and run:
+
+```
+./autogen.sh
+./configure --disable-wallet --disable-tools
+make check
+```
 
 #### Updating libnspv
 
@@ -175,6 +209,9 @@ git pull
 ./configure
 make
 ```
+
+Running nspv
+------------
 
 libnspv does all the above, it also can launch a superlite nSPV client
 
@@ -231,12 +268,13 @@ find . -name 'config.sub' -exec chmod u+w '{}' \; -exec cp -f "${PREFIX}/share/l
 find . -name 'config.guess' -exec chmod u+w '{}' \; -exec cp -f "${PREFIX}/share/libtool/build-aux/config.guess" '{}' \;
 ```
 
-#### Then the usual:
+#### To build libnspv and tools for Android use one time script:
 
-```shell
-./autogen.sh
-./configure
-make
+```
+./androidonetime.sh
 ```
 
+#### Running nspv on Android
+
+Start nspv<br>
 Then visit 127.0.0.1:7771 in your Android browser.

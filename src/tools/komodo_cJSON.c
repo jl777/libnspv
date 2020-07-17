@@ -194,8 +194,12 @@ uint64_t get_API_nxt64bits(cJSON *obj)
     struct destbuf tmp;
     if ( obj != 0 )
     {
-        if ( cJSON_IsNumber(obj) != 0 )
-            return((uint64_t)obj->valuedouble);
+        if (cJSON_IsNumber(obj) != 0) {
+            if (obj->valueint64 != LLONG_MAX && obj->valueint64 != LLONG_MIN)
+                return (uint64_t)obj->valueint64;
+            else
+                return((uint64_t)obj->valuedouble);
+        }
         copy_cJSON(&tmp,obj);
         nxt64bits = calc_nxt64bits(tmp.buf);
     }

@@ -54,3 +54,12 @@ body {
 .send_form {
 	width: 665px;
 }
+
+.hidden {
+  opacity: 0;
+  transition: opacity;
+}
+
+.hidden:hover {
+  opacity: 1;
+}

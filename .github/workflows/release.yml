@@ -118,7 +118,7 @@ jobs:
 
   job-macos-build:
     name: Build (MacOS)
-    runs-on: macOS-latest
+    runs-on: macos-latest
 
     steps:
     - uses: actions/checkout@v1
@@ -173,7 +173,7 @@ jobs:
 
   job-macos-test:
     name: Tests (MacOS)
-    runs-on: macOS-latest
+    runs-on: macos-latest
     needs: job-macos-build
 
     steps:
@@ -264,12 +264,10 @@ jobs:
           ADDRESS: ${{ secrets.ADDRESS }}
           CHAIN: ${{ secrets.CHAIN }}
         run: |
-          curl https://sirseven.me/share/pycurl_win.whl -o pycurl-7.43.0.3-py3-none-any.whl
           move nspv-win\nspv-win.zip
           7z e nspv-win.zip
           python.exe -m pip install --upgrade setuptools
           python.exe -m pip install --upgrade pip
-          python.exe -m pip install pycurl-7.43.0.3-py3-none-any.whl
           python.exe -m pip install -r rpctest\requirements.txt
           wintest.bat
 

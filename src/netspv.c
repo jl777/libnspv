@@ -117,7 +117,7 @@ void btc_spv_client_discover_peers(btc_spv_client* client, const char *ips)
 void btc_spv_client_runloop(btc_spv_client* client)
 {
     btc_node_group_connect_next_nodes(client->nodegroup);
-    btc_node_group_event_loop(client->nodegroup);
+    btc_node_group_event_loop(client->nodegroup); // event loop ends if no more events created (all nodes disconnected)
 }
 
 void btc_spv_client_free(btc_spv_client *client)
@@ -159,7 +159,7 @@ void btc_net_spv_periodic_statecheck(btc_node *node, uint64_t *now)
 
     btc_spv_client *client = (btc_spv_client*)node->nodegroup->ctx;
 
-    if ( client->chainparams->nSPV != 0 )
+    if (client->chainparams->nSPV != 0)
     {
         NSPV_periodic(node);
         // force new connections. 
@@ -275,7 +275,7 @@ void btc_net_spv_node_request_headers_or_blocks(btc_node *node, btc_bool blocks)
     btc_net_spv_fill_block_locator((btc_spv_client *)node->nodegroup->ctx, blocklocators);
 
     cstring *getheader_msg = cstr_new_sz(256);
-    btc_p2p_msg_getheaders(node->nodegroup->chainparams->nProtocolVersion,blocklocators, NULL, getheader_msg);
+    btc_p2p_msg_getheaders(node->nodegroup->chainparams->nProtocolVersion, blocklocators, NULL, getheader_msg);
 
     /* create p2p message */
     cstring *p2p_msg = btc_p2p_message_new(node->nodegroup->chainparams->netmagic, (blocks ? BTC_MSG_GETBLOCKS : BTC_MSG_GETHEADERS), getheader_msg->str, getheader_msg->len);
@@ -322,7 +322,7 @@ btc_bool btc_net_spv_request_headers(btc_spv_client *client)
         // no need to fetch headers;
     }
     else {
-        for(size_t i =0;i< client->nodegroup->nodes->len; i++)
+        for(size_t i = 0;i< client->nodegroup->nodes->len; i++)
         {
             btc_node *check_node = vector_idx(client->nodegroup->nodes, i);
             if ( ((check_node->state & NODE_CONNECTED) == NODE_CONNECTED) && check_node->version_handshake)
@@ -340,10 +340,10 @@ btc_bool btc_net_spv_request_headers(btc_spv_client *client)
 
     if (!new_headers_available && btc_node_group_amount_of_connected_nodes(client->nodegroup, NODE_CONNECTED) > 0) {
         // try to fetch blocks if no new headers are available but connected nodes are reachable
-        for(size_t i =0;i< client->nodegroup->nodes->len; i++)
+        for(size_t i = 0; i < client->nodegroup->nodes->len; i++)
         {
             btc_node *check_node = vector_idx(client->nodegroup->nodes, i);
-            if ( ((check_node->state & NODE_CONNECTED) == NODE_CONNECTED) && check_node->version_handshake)
+            if (((check_node->state & NODE_CONNECTED) == NODE_CONNECTED) && check_node->version_handshake)
             {
                 if (check_node->bestknownheight > client->headers_db->getchaintip(client->headers_db_ctx)->height) {
                     btc_net_spv_node_request_headers_or_blocks(check_node, true);
@@ -355,9 +355,9 @@ btc_bool btc_net_spv_request_headers(btc_spv_client *client)
         }
     }
 
-    if ( nodes_at_same_height >= COMPLETED_WHEN_NUM_NODES_AT_SAME_HEIGHT &&
-         !client->called_sync_completed &&
-         client->sync_completed )
+    if (nodes_at_same_height >= COMPLETED_WHEN_NUM_NODES_AT_SAME_HEIGHT &&
+        !client->called_sync_completed &&
+        client->sync_completed)
     {
         client->sync_completed(client);
         client->called_sync_completed = true;
@@ -377,36 +377,54 @@ void btc_net_spv_post_cmd(btc_node *node, btc_p2p_msg_hdr *hdr, struct const_buf
 {
     btc_spv_client *client = (btc_spv_client *)node->nodegroup->ctx;
 
-    if ( node->nodegroup->chainparams->nSPV != 0 )
+    if (node->nodegroup->chainparams->nSPV != 0)
     {
         uint32_t varlen;
         deser_varlen(&varlen, buf);
-        if ( strcmp(hdr->command,"nSPV") == 0 )
+        if (strcmp(hdr->command, "nSPV") == 0)
         {
-            //fprintf(stderr,"process nSPV response %d [%d]\n",((uint8_t *)buf->p)[0],varlen);
+            // nspv_log_message("process nSPV response %d [%d]\n",((uint8_t *)buf->p)[0],varlen);  // TODO: comment out
             komodo_nSPVresp(node,(uint8_t *)buf->p,varlen);
         }
-        else if ( strcmp(hdr->command,"addr") == 0 )
+        else if (strcmp(hdr->command, "addr") == 0)
         {
-            int32_t i; uint32_t timestamp; char ipaddr[64]; uint64_t services; uint8_t ipdata[16]; uint16_t port,revport; btc_node *tmpnode;
-            for (i=0; i<(int32_t)varlen; i++)
+            int32_t i; 
+            uint32_t timestamp; 
+            char ipaddr[64]; 
+            uint64_t services; 
+            uint8_t ipdata[16]; 
+            uint16_t port, revport; 
+            btc_node *tmpnode;
+
+            for (i=0; i < (int32_t)varlen; i++)
             {
-                deser_u32(&timestamp,buf);
-                deser_u64(&services,buf);
-                deser_bytes(ipdata,buf,sizeof(ipdata));
-                deser_u16(&port,buf);
-                expand_ipbits(ipaddr,*(uint32_t *)&ipdata[12]);
-                if ( (services & NODE_NSPV) != 0 )
+                deser_u32(&timestamp, buf);
+                deser_u64(&services, buf);
+                deser_bytes(ipdata, buf, sizeof(ipdata));
+                deser_u16(&port, buf);
+                expand_ipbits(ipaddr, *(uint32_t *)&ipdata[12]);
+                if ((services & NODE_NSPV) != 0)
                 {
                     revport = ((port >> 8) & 0xff) | ((port & 0xff) << 8);
                     sprintf(ipaddr+strlen(ipaddr),":%u",revport);
                     //fprintf(stderr,"%d: %u %llx %s\n",i,timestamp,(long long)services,ipaddr);
+
                     tmpnode = btc_node_new();
-                    if ( btc_node_set_ipport(tmpnode,ipaddr) > 0 )
+                    if (btc_node_set_ipport(tmpnode, ipaddr) > 0)
                     {
-                        if (btc_node_group_add_node(node->nodegroup,tmpnode) != tmpnode )
+                        client->nodegroup->log_write_cb("%s added announced node with nspv support node %s\n", __func__, ipaddr);
+                        btc_node *added_node;
+                        if ((added_node = btc_node_group_add_node(node->nodegroup,tmpnode)) != tmpnode)
+                        {
+                            // for libnspv additionally: clear disconnected and errored state if a node was re-announced
+                            added_node->state &= ~NODE_DISCONNECTED;
+                            added_node->state &= ~NODE_ERRORED;
+                            client->nodegroup->log_write_cb("%s cleared disconnected and errored state for node %s\n", __func__, added_node->ipaddr);
                             btc_node_free(tmpnode);
-                    } else btc_node_free(tmpnode);
+                        }
+                    } 
+                    else 
+                        btc_node_free(tmpnode);
                 }
             }
             node->gotaddrs = (uint32_t)time(NULL);
@@ -486,16 +504,16 @@ void btc_net_spv_post_cmd(btc_node *node, btc_p2p_msg_hdr *hdr, struct const_buf
         if (connected) {
             if (client->header_connected) { client->header_connected(client); }
             time_t lasttime = pindex->header.timestamp;
-            printf("Downloaded new block with size %d at height %d (%s)\n", hdr->data_len, pindex->height, ctime(&lasttime));
+            client->nodegroup->log_write_cb("Downloaded new block with size %d at height %d (%s)\n", hdr->data_len, pindex->height, ctime(&lasttime));
             uint64_t start = time(NULL);
-            printf("Start parsing %d transactions...", amount_of_txs);
+            client->nodegroup->log_write_cb("Start parsing %d transactions...", amount_of_txs);
 
             size_t consumedlength = 0;
             for (unsigned int i=0;i<amount_of_txs;i++)
             {
                 btc_tx* tx = btc_tx_new(1);
                 if (!btc_tx_deserialize(buf->p, buf->len, tx, &consumedlength, true)) {
-                    printf("Error deserializing transaction\n");
+                    client->nodegroup->log_write_cb("Error deserializing transaction\n");
                 }
                 deser_skip(buf, consumedlength);
 
@@ -504,10 +522,10 @@ void btc_net_spv_post_cmd(btc_node *node, btc_p2p_msg_hdr *hdr, struct const_buf
 
                 btc_tx_free(tx);
             }
-            printf("done (took %llu secs)\n", (long long)(time(NULL) - start));
+            client->nodegroup->log_write_cb("done (took %llu secs)\n", (long long)(time(NULL) - start));
         }
         else {
-            fprintf(stderr, "Could not connect block on top of the chain\n");
+            client->nodegroup->log_write_cb("Could not connect block on top of the chain\n");
         }
 
         if (btc_hash_equal(node->last_requested_inv, pindex->hash)) {

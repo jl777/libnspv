@@ -58,8 +58,12 @@
 #include "cJSON.h"
 
 /* define our own boolean type */
-//#define true ((cJSON_bool)1)
-//#define false ((cJSON_bool)0)
+#if !defined (true)
+#define true ((cJSON_bool)1)
+#endif
+#if !defined (false)
+#define false ((cJSON_bool)0)
+#endif
 
 typedef struct {
     const unsigned char *json;
@@ -73,7 +77,7 @@ CJSON_PUBLIC(const char *) cJSON_GetErrorPtr(void)
 }
 
 /* This is a safeguard to prevent copy-pasters from using incompatible C and header files */
-#if (CJSON_VERSION_MAJOR != 1) || (CJSON_VERSION_MINOR != 5) || (CJSON_VERSION_PATCH != 9)
+#if (CJSON_VERSION_MAJOR != 1) || (CJSON_VERSION_MINOR != 5) || (CJSON_VERSION_PATCH != 10)
     #error cJSON.h and cJSON.c have different versions. Make sure that both have the same.
 #endif
 
@@ -288,17 +292,17 @@ loop_end:
     item->valuedouble = number;
 
     /* use saturation in case of overflow */
-    if (number >= INT_MAX)
+    if (number >= LLONG_MAX)
     {
-        item->valueint = INT_MAX;
+        item->valueint64 = LLONG_MAX;
     }
-    else if (number <= INT_MIN)
+    else if (number <= LLONG_MIN)
     {
-        item->valueint = INT_MIN;
+        item->valueint64 = LLONG_MIN;
     }
     else
     {
-        item->valueint = (int)number;
+        item->valueint64 = (long long)atoll((const char*)number_c_string);
     }
 
     item->type = cJSON_Number;
@@ -310,20 +314,39 @@ loop_end:
 /* don't ask me, but the original cJSON_SetNumberValue returns an integer or double */
 CJSON_PUBLIC(double) cJSON_SetNumberHelper(cJSON *object, double number)
 {
-    if (number >= INT_MAX)
+    if (number >= LLONG_MAX)
     {
-        object->valueint = INT_MAX;
+        object->valueint64 = LLONG_MAX;
     }
-    else if (number <= INT_MIN)
+    else if (number <= LLONG_MIN)
     {
-        object->valueint = INT_MIN;
+        object->valueint64 = LLONG_MIN;
     }
     else
     {
-        object->valueint = (int)number;
+        object->valueint64 = (long long)number;
     }
 
     return object->valuedouble = number;
+}
+
+CJSON_PUBLIC(long long) cJSON_SetIntegerHelper(cJSON *object, long long int64val)
+{
+    if (int64val >= LLONG_MAX)
+    {
+        object->valueint64 = LLONG_MAX;
+    }
+    else if (int64val <= LLONG_MIN)
+    {
+        object->valueint64 = LLONG_MIN;
+    }
+    else
+    {
+        object->valueint64 = (long long)int64val;
+    }
+
+    object->valuedouble = (double)int64val;
+    return int64val;
 }
 
 typedef struct
@@ -443,32 +466,51 @@ static cJSON_bool print_number(const cJSON * const item, printbuffer * const out
 {
     unsigned char *output_pointer = NULL;
     double d = item->valuedouble;
+    long long n = item->valueint64;
     int length = 0;
     size_t i = 0;
     unsigned char number_buffer[26]; /* temporary buffer to print the number into */
     unsigned char decimal_point = get_decimal_point();
     double test;
+    double intpart;
 
     if (output_buffer == NULL)
     {
         return false;
     }
 
-    /* This checks for NaN and Infinity */
-    if ((d * 0) != 0)
+    // check if number has fractional
+    if (modf(d, &intpart) != 0)
     {
-        length = sprintf((char*)number_buffer, "null");
+        // use float value
+        /* This checks for NaN and Infinity */
+        if ((d * 0) != 0)
+        {
+            length = sprintf((char*)number_buffer, "null");
+        }
+        else
+        {
+            /* Try 15 decimal places of precision to avoid nonsignificant nonzero digits */
+            length = sprintf((char*)number_buffer, "%1.15g", d);
+
+            /* Check whether the original double can be recovered */
+            if ((sscanf((char*)number_buffer, "%lg", &test) != 1) || ((double)test != d))
+            {
+                /* If not, print with 17 decimal places of precision */
+                length = sprintf((char*)number_buffer, "%1.17g", d);
+            }
+        }
     }
     else
     {
-        /* Try 15 decimal places of precision to avoid nonsignificant nonzero digits */
-        length = sprintf((char*)number_buffer, "%1.15g", d);
-
-        /* Check whether the original double can be recovered */
-        if ((sscanf((char*)number_buffer, "%lg", &test) != 1) || ((double)test != d))
+        // use int64 value:
+        if (n == LLONG_MAX || n == LLONG_MIN)
         {
-            /* If not, print with 17 decimal places of precision */
-            length = sprintf((char*)number_buffer, "%1.17g", d);
+            length = sprintf((char*)number_buffer, "null");
+        }
+        else
+        {
+            length = sprintf((char*)number_buffer, "%lli", n);
         }
     }
 
@@ -1185,7 +1227,7 @@ static cJSON_bool parse_value(cJSON * const item, parse_buffer * const input_buf
     if (can_read(input_buffer, 4) && (strncmp((const char*)buffer_at_offset(input_buffer), "true", 4) == 0))
     {
         item->type = cJSON_True;
-        item->valueint = 1;
+        item->valueint64 = 1;
         input_buffer->offset += 4;
         return true;
     }
@@ -2111,17 +2153,17 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateNumber(double num)
         item->valuedouble = num;
 
         /* use saturation in case of overflow */
-        if (num >= INT_MAX)
+        if (num >= LLONG_MAX)
         {
-            item->valueint = INT_MAX;
+            item->valueint64 = LLONG_MAX;
         }
-        else if (num <= INT_MIN)
+        else if (num <= LLONG_MIN)
         {
-            item->valueint = INT_MIN;
+            item->valueint64 = LLONG_MIN;
         }
         else
         {
-            item->valueint = (int)num;
+            item->valueint64 = (long long)num;
         }
     }
 
@@ -2349,7 +2391,7 @@ CJSON_PUBLIC(cJSON *) cJSON_Duplicate(const cJSON *item, cJSON_bool recurse)
     }
     /* Copy over all vars */
     newitem->type = item->type & (~cJSON_IsReference);
-    newitem->valueint = item->valueint;
+    newitem->valueint64 = item->valueint64;
     newitem->valuedouble = item->valuedouble;
     if (item->valuestring)
     {

@@ -4,16 +4,37 @@ ACLOCAL_AMFLAGS = -I build-aux/m4
 
 DIST_SUBDIRS = src/secp256k1
 
+if TARGET_WINDOWS
+WS2_32_LIBS = -Wl,-lws2_32
+FPIC_FLAGS = 
+else
+WS2_32_LIBS =
+FPIC_FLAGS = -fPIC
+endif
+
+if ANDROID_SO
+ANDROID_LIBS_CFLAGS = -Wl,-landroid 
+ANDROID_MATH_CFLAGS = -Wl,-lm
+ANDROID_MATH_LIB = -lm
+ANDROID_LOG = -llog 
+else
+ANDROID_LIBS_CFLAGS =
+ANDROID_MATH_CFLAG =
+ANDROID_MATH_LIB = 
+ANDROID_LOG =
+endif
+
+
 LIBSECP256K1=src/secp256k1/libsecp256k1.la
 LIBCRYPTOCONDITIONS=src/tools/cryptoconditions/libcryptoconditions.la
 
 $(LIBSECP256K1): $(wildcard src/secp256k1/src/*) $(wildcard src/secp256k1/include/*)
 	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F)
 
-$(LIBCRYPTOCONDITIONS): 
+$(LIBCRYPTOCONDITIONS):  
 	@echo "Building Libcryptoconditions ..." && $(MAKE) -C "$(@D)" "$(@F)"
 
-lib_LTLIBRARIES = libbtc.la
+noinst_LTLIBRARIES = libbtc.la
 include_HEADERS = \
     include/btc/aes256_cbc.h \
     include/btc/base58.h \
@@ -69,9 +90,11 @@ libbtc_la_SOURCES = \
     src/utils.c \
     src/merkle_c.c \
     src/vector.c
+libbtc_la_CPPFLAGS = -DLIBNSPV_BUILD
+libbtc_la_CFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/src/logdb/include -O2 $(FPIC_FLAGS)
+# -DLIBBTC_BUILD
+libbtc_la_LIBADD = $(LIBSECP256K1) $(ANDROID_LOG)
 
-libbtc_la_CFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/src/logdb/include -O2
-libbtc_la_LIBADD = $(LIBSECP256K1)
 
 if USE_TESTS
 noinst_PROGRAMS = tests
@@ -150,6 +173,7 @@ libbtc_la_SOURCES += \
 
 libbtc_la_LIBADD += $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS)
 libbtc_la_CFLAGS += $(EVENT_CFLAGS) $(EVENT_PTHREADS_CFLAGS) -O2
+libbtc_la_LDFLAGS = -static
 
 if USE_TESTS
 tests_SOURCES += \
@@ -180,27 +204,42 @@ inst_PROGRAMS += bitcoin-send-tx
 bitcoin_send_tx_LDADD = libbtc.la $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS)
 bitcoin_send_tx_SOURCES = \
     src/tools/bitcoin-send-tx.c
-bitcoin_send_tx_CFLAGS = $(libbtc_la_CFLAGS) $(EVENT_CFLAGS) $(EVENT_PTHREADS_CFLAGS) -O2
+bitcoin_send_tx_CFLAGS = $(libbtc_la_CFLAGS) $(EVENT_CFLAGS) $(EVENT_PTHREADS_CFLAGS) -O2 
 bitcoin_send_tx_CPPFLAGS = -I$(top_srcdir)/src
 bitcoin_send_tx_LDFLAGS = -static
 
 inst_PROGRAMS += bitcoin-spv
-bitcoin_spv_LDADD = libbtc.la
+bitcoin_spv_LDADD = libbtc.la $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS)  $(ANDROID_LIBS)
 bitcoin_spv_SOURCES = \
     src/tools/bitcoin-spv.c
-bitcoin_spv_CFLAGS = $(libbtc_la_CFLAGS) -O2
+bitcoin_spv_CFLAGS = $(libbtc_la_CFLAGS) -O2 
 bitcoin_spv_CPPFLAGS = -I$(top_srcdir)/src
 bitcoin_spv_LDFLAGS = -static
 endif
 
+# building nspv executable
 inst_PROGRAMS += nspv
-nspv_LDADD = libbtc.la $(LIBCRYPTOCONDITIONS) -lpthread -lsodium
+#inst_PROGRAMS = nspv
+nspv_LDADD = libbtc.la $(LIBCRYPTOCONDITIONS) -lpthread -lsodium $(ANDROID_MATH_LIB)
 nspv_SOURCES = \
-src/tools/nspv.c 
-#src/tools/jpeg/jaricom.c src/tools/jpeg/jcapimin.c src/tools/jpeg/jcapistd.c src/tools/jpeg/jcarith.c src/tools/jpeg/jccoefct.c src/tools/jpeg/jccolor.c src/tools/jpeg/jcdctmgr.c src/tools/jpeg/jchuff.c src/tools/jpeg/jcinit.c src/tools/jpeg/jcmainct.c src/tools/jpeg/jcmarker.c src/tools/jpeg/jcmaster.c src/tools/jpeg/jcomapi.c src/tools/jpeg/jcparam.c src/tools/jpeg/jcprepct.c src/tools/jpeg/jcsample.c src/tools/jpeg/jctrans.c src/tools/jpeg/jdapimin.c src/tools/jpeg/jdapistd.c src/tools/jpeg/jdarith.c src/tools/jpeg/jdatadst.c src/tools/jpeg/jdatasrc.c src/tools/jpeg/jdcoefct.c src/tools/jpeg/jdcolor.c src/tools/jpeg/jddctmgr.c src/tools/jpeg/jdhuff.c src/tools/jpeg/jdinput.c src/tools/jpeg/jdmainct.c src/tools/jpeg/jdmarker.c src/tools/jpeg/jdmaster.c src/tools/jpeg/jdmerge.c src/tools/jpeg/jdpostct.c src/tools/jpeg/jdsample.c src/tools/jpeg/jdtrans.c src/tools/jpeg/jerror.c src/tools/jpeg/jfdctflt.c src/tools/jpeg/jfdctfst.c src/tools/jpeg/jfdctint.c src/tools/jpeg/jidctflt.c src/tools/jpeg/jidctfst.c src/tools/jpeg/jidctint.c src/tools/jpeg/jquant1.c src/tools/jpeg/jquant2.c src/tools/jpeg/jutils.c src/tools/jpeg/misc/jmemnobs.c src/tools/jpeg/jmemmgr.c
-nspv_CFLAGS = $(libbtc_la_CFLAGS) -O2  -Wno-unused-parameter
+	src/tools/nspv.c 
+nspv_CFLAGS = $(libbtc_la_CFLAGS) $(EVENT_CFLAGS) $(EVENT_PTHREADS_CFLAGS) -O2  -Wno-unused-parameter 
 nspv_CPPFLAGS = -I$(top_srcdir)/src
 nspv_LDFLAGS = -static
+
+# building libnspv.so (dll):
+lib_LTLIBRARIES = libnspv.la
+libnspv_la_SOURCES = \
+	src/tools/nspv.c
+libnspv_la_CPPFLAGS = -I$(top_srcdir)/src -DLIBNSPV_BUILD
+## libsec & cc will be linked as so:
+# libnspv_la_LIBADD = libbtc.la $(LIBSECP256K1) $(LIBCRYPTOCONDITIONS)  # and other .la do not work for MINGW
+
+# link as shared:
+# using '-Wl,-lcryptoconditions' instead of '$(LIBCRYPTOCONDITIONS)' for MINGW build:
+libnspv_la_CFLAGS = $(libbtc_la_CFLAGS) -O2 -Wno-unused-command-line-argument -Xlinker -L$(top_srcdir)/src/secp256k1/.libs -L$(top_srcdir)/src/tools/cryptoconditions/.libs -levent -lcryptoconditions -lsecp256k1 $(WS2_32_LIBS) -lsodium -lpthread $(FPIC_FLAGS) $(ANDROID_LIBS_CFLAGS) $(ANDROID_MATH_CFLAGS) 
+libnspv_la_LDFLAGS = -no-undefined 
+libnspv_la_LIBADD = libbtc.la  # $(LIBCRYPTOCONDITIONS) and other .la do not work for MINGW
 
 endif
 

@@ -359,3 +359,8 @@ btc_bool broadcast_tx(const btc_chainparams* chain, const btc_tx* tx, const char
     }
     return 1;
 }
+
+FILE* nspv_get_fdebug()
+{
+    return stderr;
+}
