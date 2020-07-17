@@ -1,4 +1,5 @@
 python-dateutil>=2.6.1
+pycurl
 PyYAML>=3.11
 requests>=2.18.4
 requests-unixsocket>=0.1.5
