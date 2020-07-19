@@ -51,6 +51,9 @@ LIBBTC_API void btc_cheap_random_bytes(uint8_t* buf, uint32_t len);
 LIBBTC_API void btc_get_default_datadir(cstring *path_out);
 LIBBTC_API void btc_file_commit(FILE *file);
 
+FILE *nspv_get_fdebug();
+LIBBTC_API void nspv_log_message(const char *format, ...);
+
 /* support substitude for GNU only tdestroy */
 /* Let's hope the node struct is always compatible */
 

@@ -43,3 +43,5 @@ libbtc.pc
 *.gcda
 *.gcov
 *.gcno
+.idea/workspace.xml
+.idea/

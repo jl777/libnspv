@@ -122,7 +122,7 @@ jobs:
 
   job-macos-build:
     name: Build (MacOS)
-    runs-on: macOS-latest
+    runs-on: macos-latest
 
     steps:
     - uses: actions/checkout@v2
@@ -177,7 +177,7 @@ jobs:
 
   job-macos-test:
     name: Tests (MacOS)
-    runs-on: macOS-latest
+    runs-on: macos-latest
     needs: job-macos-build
 
     steps:
@@ -264,13 +264,15 @@ jobs:
           name: nspv-win
       - name: Win Tests
         shell: cmd
-        WALL: ${{ secrets.WALL }}
-        ADDRESS: ${{ secrets.ADDRESS }}
-        CHAIN: ${{ secrets.CHAIN }}
-      run: |
-        move nspv-win\nspv-win.zip
-        7z e nspv-win.zip
-        python.exe -m pip install --upgrade setuptools
-        python.exe -m pip install --upgrade pip
-        python.exe -m pip install -r rpctest\requirements.txt
-        wintest.bat
+        env:
+          WALL: ${{ secrets.WALL }}
+          ADDRESS: ${{ secrets.ADDRESS }}
+          CHAIN: ${{ secrets.CHAIN }}
+        run: |
+          move nspv-win\nspv-win.zip
+          7z e nspv-win.zip
+          python.exe -m pip install --upgrade setuptools
+          python.exe -m pip install --upgrade pip
+          python.exe -m pip install -r rpctest\requirements.txt
+          wintest.bat
+

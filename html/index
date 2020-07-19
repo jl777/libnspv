@@ -115,7 +115,9 @@
                 <div class="alert alert-danger" role="alert">$LOGIN_SEED_NOTICE</div>
                 <dl class="row" style="background-color: #00000024; padding: 10px 0;">
                   <dt class="col-sm-3">$LOGIN_WALLET_SEED:<br><span class="badge badge-info">$LOGIN_COPY_IT</span> <span class="badge badge-danger">$LOGIN_VERY_IMP</span></dt>
-                  <dd class="col-sm-9"><pre class="text-break text-wrap text-white mb-0">$WALLETSEED</pre>
+                  <dd class="col-sm-9">
+                  <p style="color:white;">Hover Below to see your Seed</p>
+                  <div class="hidden"><pre class="text-break text-wrap text-white mb-0">$WALLETSEED</pre></div>
                     <small id="nspvWifHelp" class="form-text text-muted mb-2 mt-0">$LOGIN_SEED_HELP</small></dd>
 
                   <dt class="col-sm-3">$LOGIN_NEW_ADDR:</dt>
@@ -125,7 +127,9 @@
                 <h4>$LOGIN_SEED_ADVANCE_INFO:</h4>
                 <dl class="row" style="margin-bottom: 0; background-color: #00000024; padding: 10px 0;">
                   <dt class="col-sm-3">$LOGIN_PRIV_KEY:<br><span class="badge badge-info">$LOGIN_COPY_IT</span> <span class="badge badge-danger">$LOGIN_VERY_IMP</span></dt>
-                  <dd class="col-sm-9"><pre class="text-break text-wrap text-white mb-0">$NEW_WIFKEY</pre>
+                  <dd class="col-sm-9">
+                  <p style="color:white;">Hover Below to see your WIF</p>
+                  <div class="hidden"><pre class="text-break text-wrap text-white mb-0">$NEW_WIFKEY</pre></div>
                     <small id="nspvWifHelp" class="form-text text-muted mb-2 mt-0">$LOGIN_PRIVKEY_HELP</small></dd>
 
                   <dt class="col-sm-3" style="margin-bottom: 0;">$LOGIN_PUB_KEY</dt>

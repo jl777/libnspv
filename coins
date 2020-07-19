@@ -77,7 +77,10 @@
     "asset": "K64",
     "fname": "Komodore64",
     "rpcport": 12245,
-    "mm2": 1
+    "mm2": 1,
+    "p2p": "12244",
+    "magic": "b8fdb974",
+    "nSPV": "18.197.20.211"
   },
   {
     "coin":"KMDICE",
@@ -94,7 +97,7 @@
     "mm2": 1,
     "p2p": 12985,
     "magic":"feb4cb23",
-    "nSPV": "159.69.45.70, 5.9.102.210, 5.9.253.195, 5.9.253.196, 5.9.253.197, 5.9.253.198, 5.9.253.199, 5.9.253.200, 5.9.253.201, 5.9.253.202, 5.9.253.203"
+    "nSPV": "51.75.122.83, 159.69.45.70, 5.9.102.210, 5.9.253.195, 5.9.253.196, 5.9.253.197, 5.9.253.198, 5.9.253.199, 5.9.253.200, 5.9.253.201, 5.9.253.202, 5.9.253.203"
   },
   {
     "coin": "RICK",
@@ -104,7 +107,7 @@
     "mm2": 1,
     "p2p": 25434,
     "magic":"f60d75fd",
-    "nSPV": "85.10.204.179, 159.69.45.70, 27.102.107.29, 27.102.107.28, 27.102.107.27"
+    "nSPV": "85.10.204.179, 159.69.45.70, 78.46.239.206, 78.47.11.6"
   },
     {
     "coin": "BTCH",
@@ -114,7 +117,7 @@
     "mm2": 1,
     "p2p": 8799,
     "magic":"f41c5eff",
-    "nSPV":"136.243.58.134"
+    "nSPV":"95.213.238.98, 136.243.58.134"
     },
     {
     "coin": "NSPV",
@@ -145,20 +148,29 @@
     "asset": "RFOX",
     "fname": "RedFOX",
     "rpcport": 32269,
-    "mm2": 1
+    "mm2": 1,
+    "p2p": "32268",
+    "magic": "4cad0644",
+    "nSPV": "95.213.238.98"
   },
   {
     "coin": "CCL",
     "asset": "CCL",
     "fname": "CoinCollect",
     "rpcport": 20849,
-    "mm2": 1
+    "mm2": 1,
+    "p2p": "20848",
+    "magic": "5c31ff66",
+    "nSPV": "142.93.136.89, 195.201.22.89"
   },
   {
     "coin": "KOIN",
     "asset": "KOIN",
     "fname": "Koinon",
-    "rpcport": 10702
+    "rpcport": 10702,
+    "p2p": "10701",
+    "magic": "764c56b6",
+    "nSPV": "3.0.32.10"
   },
   {
     "coin": "COLX",
@@ -1766,7 +1778,10 @@
     "asset": "MORTY",
     "fname": "MORTY (TESTCOIN)",
     "rpcport": 63812,
-    "mm2": 1 
+    "mm2": 1,
+    "p2p": "16347",
+    "magic": "afbcf383",
+    "nSPV": "95.217.44.58, 138.201.136.145" 
   },
   {
     "coin": "ETH",
@@ -1958,7 +1973,11 @@
     "asset": "OOT",
     "fname": "Utrum",
     "rpcport": 12467,
-    "mm2": 1
+    "mm2": 1,
+    "p2p": "12466",
+    "magic": "a75b4bad",
+    "nSPV": "95.213.238.98"
+
   },
   {
     "coin": "HTML",
@@ -2108,13 +2127,19 @@
     "asset": "ETOMIC",
     "fname": "ETOMIC",
     "rpcport": 10271,
-    "mm2": 1
+    "mm2": 1,
+    "p2p": "10270",
+    "magic": "072a90e8",
+    "nSPV": "95.213.238.98"
   },
   {
     "coin": "AXO",
     "asset": "AXO",
     "fname": "AXO",
-    "rpcport": 12927
+    "rpcport": 12927,
+    "p2p": "12926",
+    "magic": "ba009d17",
+    "nSPV": "95.213.238.98"
   },
   {
     "coin": "INN",
@@ -2731,7 +2756,10 @@
     "coin": "REVS",
     "asset": "REVS",
     "fname": "REVS",
-    "rpcport": 10196
+    "rpcport": 10196,
+    "p2p": "10195",
+    "magic": "1a774141",
+    "nSPV": "95.213.238.98"
   },
   {
     "coin": "VRSC",
@@ -2746,13 +2774,19 @@
     "coin": "ZILLA",
     "asset": "ZILLA",
     "fname": "ChainZilla",
-    "rpcport": 10041
+    "rpcport": 10041,
+    "p2p": "10040",
+    "magic": "91db4d20",
+    "nSPV": "51.68.215.104"
   },
   {
     "coin": "JUMBLR",
     "asset": "JUMBLR",
     "fname": "JUMBLR",
-    "rpcport": 15106
+    "rpcport": 15106,
+    "p2p": "15105",
+    "magic": "3ab2451e",
+    "nSPV": "95.213.238.98"
   },
   {
     "coin": "DOGE",
@@ -2836,25 +2870,38 @@
     "coin": "SUPERNET",
     "asset": "SUPERNET",
     "fname": "SUPERNET",
-    "rpcport": 11341
+    "rpcport": 11341,
+    "p2p": "11340",
+    "magic": "562411b9",
+    "nSPV": "95.213.238.98"
   },
   {
     "coin": "WLC",
     "asset": "WLC",
     "fname": "Wireless Coin",
-    "rpcport": 12167
+    "rpcport": 12167,
+    "p2p": "12166",
+    "magic": "d52e5900",
+    "nSPV": "95.213.238.98"
+
   },
   {
     "coin": "PANGEA",
     "asset": "PANGEA",
     "fname": "Pangea Poker",
-    "rpcport": 14068
+    "rpcport": 14068,
+    "p2p": "14067",
+    "magic": "17356a68",
+    "nSPV": "95.213.238.98"
   },
   {
     "coin": "DEX",
     "asset": "DEX",
     "fname": "InstantDEX",
-    "rpcport": 11890
+    "rpcport": 11890,
+    "p2p": "11889",
+    "magic": "e051ce0a",
+    "nSPV": "95.213.238.98"
   },
   {
     "coin": "DSEC",
@@ -2866,50 +2913,75 @@
     "coin": "BET",
     "asset": "BET",
     "fname": "BET",
-    "rpcport": 14250
+    "rpcport": 14250,
+    "p2p": "14249",
+    "magic": "7961f507",
+    "nSPV": "95.213.238.98"
   },
   {
     "coin": "CRYPTO",
     "asset": "CRYPTO",
     "fname": "Crypto777",
-    "rpcport": 8516
+    "rpcport": 8516,
+    "p2p": "8515",
+    "magic": "b47caeaa",
+    "nSPV": "95.213.238.98"
+
   },
   {
     "coin": "HODL",
     "asset": "HODL",
     "fname": "HODL",
-    "rpcport": 14431
+    "rpcport": 14431,
+    "p2p": "14430",
+    "magic": "7516cc00",
+    "nSPV": "95.213.238.98"
   },
   {
     "coin": "MSHARK",
     "asset": "MSHARK",
     "fname": "MiliShark",
-    "rpcport": 8846
+    "rpcport": 8846,
+    "p2p": "8845",
+    "magic": "f0e9f49e",
+    "nSPV": "95.213.238.98"
   },
   {
     "coin": "BOTS",
     "asset": "BOTS",
     "fname": "BOTS",
-    "rpcport": 11964
+    "rpcport": 11964,
+    "p2p": "11963",
+    "magic": "ec562904",
+    "nSPV": "95.213.238.98"
   },
   {
     "coin": "MGW",
     "asset": "MGW",
     "fname": "MultiGateway",
-    "rpcport": 12386
+    "rpcport": 12386,
+    "p2p": "12385",
+    "magic": "7c1596a7",
+    "nSPV": "95.213.238.98"
   },
   {
     "coin": "COQUI",
     "asset": "COQUICASH",
     "fname": "Coqui Cash",
     "rpcport": 19712,
-    "mm2": 1
+    "mm2": 1,
+    "p2p": "19711",
+    "magic": "9fe1d1d0",
+    "nSPV": "78.47.108.168"
   },
   {
     "coin": "KV",
     "asset": "KV",
     "fname": "KeyValue",
-    "rpcport": 8299
+    "rpcport": 8299,
+    "p2p": "8298",
+    "magic": "f434f1c5",
+    "nSPV": "95.213.238.98"
   },
   {
     "coin": "CEAL",
@@ -2921,7 +2993,10 @@
     "coin": "MESH",
     "asset": "MESH",
     "fname": "SuperMESH",
-    "rpcport": 9455
+    "rpcport": 9455,
+    "p2p": "9454",
+    "magic": "4d6bbfb6",
+    "nSPV": "95.213.238.98"
   },
   {
     "coin": "ROGER",
@@ -2965,19 +3040,25 @@
    "fname": "DionPay",
    "rpcport": 23895
    },
-   {
+  {
     "coin": "OURC",
     "asset": "OUR",
     "fname": "OUR Crypto Union",
     "rpcport": 45672,
+    "p2p": 45671,
+    "nSPV": "139.99.144.114, 51.255.195.65, 217.182.129.38, 37.187.225.231",
+    "magic": "a78666b7",
     "mm2": 1
-   },
+  },
    {
     "coin": "ZEXO",
     "asset": "ZEXO",
     "fname": "Zaddex",
     "rpcport": 33970,
-    "mm2": 1
+    "mm2": 1,
+    "p2p": "33969",
+    "magic": "5d3f0413",
+    "nSPV": "80.240.17.222"
    },
    {
     "coin":"ABP", 
@@ -2992,7 +3073,10 @@
     "coin": "PUNGO",
     "asset": "PGT",
     "fname": "Pungo Token",
-    "rpcport": 46705
+    "rpcport": 46705,
+    "p2p": "46704",
+    "magic": "8c0d7ec8",
+    "nSPV": "190.114.254.104"
    },
    {
     "coin": "PTX",

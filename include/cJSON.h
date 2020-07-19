@@ -46,7 +46,7 @@ extern "C"
 /* project version */
 #define CJSON_VERSION_MAJOR 1
 #define CJSON_VERSION_MINOR 5
-#define CJSON_VERSION_PATCH 9
+#define CJSON_VERSION_PATCH 10
 
 #include <stddef.h>
 
@@ -90,7 +90,7 @@ typedef struct cJSON
     /* The item's string, if type==cJSON_String  and type == cJSON_Raw */
     char *valuestring;
     /* writing to valueint is DEPRECATED, use cJSON_SetNumberValue instead */
-    int valueint;
+    long long valueint64;
     /* The item's number, if type==cJSON_Number */
     double valuedouble;
 
@@ -270,7 +270,8 @@ CJSON_PUBLIC(void) cJSON_Minify(char *json);
 #define cJSON_AddRawToObject(object,name,s) cJSON_AddItemToObject(object, name, cJSON_CreateRaw(s))
 
 /* When assigning an integer value, it needs to be propagated to valuedouble too. */
-#define cJSON_SetIntValue(object, number) ((object) ? (object)->valueint = (object)->valuedouble = (number) : (number))
+CJSON_PUBLIC(long long) cJSON_SetIntegerHelper(cJSON *object, long long int64val);  // dimxy
+#define cJSON_SetIntValue(object, number) ((object) ? cJSON_SetIntegerHelper(object, (number)) : (number))
 /* helper for the cJSON_SetNumberValue macro */
 CJSON_PUBLIC(double) cJSON_SetNumberHelper(cJSON *object, double number);
 #define cJSON_SetNumberValue(object, number) ((object != NULL) ? cJSON_SetNumberHelper(object, (double)number) : (number))

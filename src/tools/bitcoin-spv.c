@@ -268,3 +268,8 @@ void komodo_nSPVresp(btc_node *from,uint8_t *response,int32_t len)
         
     }
 }
+
+FILE* nspv_get_fdebug()
+{
+    return stderr;
+}

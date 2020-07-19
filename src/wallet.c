@@ -322,7 +322,7 @@ btc_bool btc_wallet_load(btc_wallet* wallet, const char* file_path, int *error, 
              memcmp(buf, file_hdr_magic, sizeof(file_hdr_magic))
             )
         {
-            fprintf(stderr, "Wallet file: error reading database file\n");
+            nspv_log_message("Wallet file: error reading database file\n");
             return false;
         }
         if (le32toh(*(buf+sizeof(file_hdr_magic))) > current_version) {

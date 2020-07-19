@@ -27,12 +27,37 @@
 #define NSPV_KOMODO_MAXMEMPOOLTIME 3600 // affects consensus
 #define NSPV_MAX_BLOCK_HEADERS 128
 #define NSPV_ENCRYPTED_MAXSIZE 8192
+#define NSPV_MAXERRORLEN 256
+#define NSPV_GETADDR_INTERVAL 60 // sec
+
+#define NSPV_MAXERRORLEN 256
 
 #include <time.h>
 #ifndef __MINGW
 #include <pthread.h>
 #endif
+
+#include <btc/net.h>
 #include <btc/netspv.h>
+
+#ifndef LIBNSPV_API
+#if defined(_WIN32)
+#ifdef LIBNSPV_BUILD
+#define LIBNSPV_API __declspec(dllexport)
+#else
+#define LIBNSPV_API
+#endif
+#elif defined(__GNUC__) && defined(LIBNSPV_BUILD)
+#define LIBNSPV_API __attribute__((visibility("default")))
+#else
+#define LIBNSPV_API
+#endif
+#endif
+
+// bool is normally defined in stdbool.h if it is supported in this gcc ver
+#if !defined bool
+#define bool int
+#endif
 
 union _bits256 { uint8_t bytes[32]; uint16_t ushorts[16]; uint32_t uints[8]; uint64_t ulongs[4]; uint64_t txid; };
 typedef union _bits256 bits256;
@@ -40,22 +65,21 @@ typedef union _bits256 bits256;
 #define SATOSHIDEN ((uint64_t)100000000)
 #define dstr(x) ((double)(x) / SATOSHIDEN)
 #define portable_mutex_t pthread_mutex_t
-#define portable_mutex_init(ptr) pthread_mutex_init(ptr,NULL)
+#define portable_mutex_init(ptr) pthread_mutex_init(ptr, NULL)
 #define portable_mutex_lock pthread_mutex_lock
 #define portable_mutex_unlock pthread_mutex_unlock
 #define OS_thread_create pthread_create
-#define SETBIT(bits,bitoffset) (((uint8_t *)bits)[(bitoffset) >> 3] |= (1 << ((bitoffset) & 7)))
-#define GETBIT(bits,bitoffset) (((uint8_t *)bits)[(bitoffset) >> 3] & (1 << ((bitoffset) & 7)))
-#define CLEARBIT(bits,bitoffset) (((uint8_t *)bits)[(bitoffset) >> 3] &= ~(1 << ((bitoffset) & 7)))
+#define SETBIT(bits, bitoffset) (((uint8_t*)bits)[(bitoffset) >> 3] |= (1 << ((bitoffset)&7)))
+#define GETBIT(bits, bitoffset) (((uint8_t*)bits)[(bitoffset) >> 3] & (1 << ((bitoffset)&7)))
+#define CLEARBIT(bits, bitoffset) (((uint8_t*)bits)[(bitoffset) >> 3] &= ~(1 << ((bitoffset)&7)))
 
 
-struct rpcrequest_info
-{
-    struct rpcrequest_info *next,*prev;
+struct rpcrequest_info {
+    struct rpcrequest_info *next, *prev;
     pthread_t T;
     int32_t sock;
     uint32_t ipbits;
-    uint16_t port,pad;
+    uint16_t port, pad;
 };
 
 #include "komodo_cJSON.h"
@@ -103,8 +127,7 @@ struct rpcrequest_info
 
 #define COIN SATOSHIDEN
 
-struct NSPV_equihdr
-{
+struct NSPV_equihdr {
     int32_t nVersion;
     bits256 hashPrevBlock;
     bits256 hashMerkleRoot;
@@ -115,151 +138,135 @@ struct NSPV_equihdr
     uint8_t nSolution[1344];
 };
 
-struct NSPV_utxoresp
-{
+struct NSPV_utxoresp {
     bits256 txid;
-    int64_t satoshis,extradata;
-    int32_t vout,height;
+    int64_t satoshis, extradata;
+    int32_t vout, height;
 };
 
-struct NSPV_utxosresp
-{
-    struct NSPV_utxoresp *utxos;
+struct NSPV_utxosresp {
+    struct NSPV_utxoresp* utxos;
     char coinaddr[64];
-    int64_t total,interest;
-    int32_t nodeheight,skipcount,filter;
-    uint16_t numutxos,CCflag;
+    int64_t total, interest;
+    int32_t nodeheight, skipcount, filter;
+    uint16_t numutxos, CCflag;
 };
 
-struct NSPV_txidresp
-{
+struct NSPV_txidresp {
     bits256 txid;
     int64_t satoshis;
-    int32_t vout,height;
+    int32_t vout, height;
 };
 
-struct NSPV_txidsresp
-{
-    struct NSPV_txidresp *txids;
+struct NSPV_txidsresp {
+    struct NSPV_txidresp* txids;
     char coinaddr[64];
-    int32_t nodeheight,skipcount,filter;
-    uint16_t numtxids,CCflag;
+    int32_t nodeheight, skipcount, filter;
+    uint16_t numtxids, CCflag;
 };
 
-struct NSPV_mempoolresp
-{
-    bits256 *txids;
+struct NSPV_mempoolresp {
+    bits256* txids;
     char coinaddr[64];
     bits256 txid;
-    int32_t nodeheight,vout,vindex;
-    uint16_t numtxids; uint8_t CCflag,memfunc;
+    int32_t nodeheight, vout, vindex;
+    uint16_t numtxids;
+    uint8_t CCflag, memfunc;
 };
 
-struct NSPV_ntz
-{
-    bits256 blockhash,txid,othertxid;
-    int32_t height,txidheight;
+struct NSPV_ntz {
+    bits256 blockhash, txid, othertxid;
+    int32_t height, txidheight;
     uint32_t timestamp;
 };
 
-struct NSPV_ntzsresp
-{
-    struct NSPV_ntz prevntz,nextntz;
+struct NSPV_ntzsresp {
+    struct NSPV_ntz prevntz, nextntz;
     int32_t reqheight;
 };
 
-struct NSPV_inforesp
-{
+struct NSPV_inforesp {
     struct NSPV_ntz notarization;
     bits256 blockhash;
-    int32_t height,hdrheight;
+    int32_t height, hdrheight;
     struct NSPV_equihdr H;
     uint32_t version;
 };
 
-struct NSPV_txproof
-{
+struct NSPV_txproof {
     bits256 txid;
     int64_t unspentvalue;
-    int32_t height,vout,txlen,txprooflen;
-    uint8_t *tx,*txproof;
+    int32_t height, vout, txlen, txprooflen;
+    uint8_t *tx, *txproof;
     uint256 hashblock;
 };
 
-struct NSPV_ntzproofshared
-{
-    struct NSPV_equihdr *hdrs;
-    int32_t prevht,nextht,pad32;
-    uint16_t numhdrs,pad16;
+struct NSPV_ntzproofshared {
+    struct NSPV_equihdr* hdrs;
+    int32_t prevht, nextht, pad32;
+    uint16_t numhdrs, pad16;
 };
 
-struct NSPV_ntzsproofresp
-{
+struct NSPV_ntzsproofresp {
     struct NSPV_ntzproofshared common;
-    bits256 prevtxid,nexttxid;
-    int32_t prevtxidht,nexttxidht,prevtxlen,nexttxlen;
-    uint8_t *prevntz,*nextntz;
+    bits256 prevtxid, nexttxid;
+    int32_t prevtxidht, nexttxidht, prevtxlen, nexttxlen;
+    uint8_t *prevntz, *nextntz;
 };
 
-struct NSPV_MMRproof
-{
+struct NSPV_MMRproof {
     struct NSPV_ntzproofshared common;
     // tbd
 };
 
-struct NSPV_spentinfo
-{
+struct NSPV_spentinfo {
     struct NSPV_txproof spent;
     bits256 txid;
-    int32_t vout,spentvini;
+    int32_t vout, spentvini;
 };
 
-struct NSPV_broadcastresp
-{
+struct NSPV_broadcastresp {
     bits256 txid;
     int32_t retcode;
 };
 
-struct NSPV_CCmtxinfo
-{
+struct NSPV_CCmtxinfo {
     struct NSPV_utxosresp U;
     struct NSPV_utxoresp used[NSPV_MAXVINS];
 };
 
-struct NSPV_remoterpcresp
-{
+struct NSPV_remoterpcresp {
     char method[64];
-    char json[11000];
+    char* json;
 };
 
-struct NSPV_header
-{
+struct NSPV_header {
     int32_t height;
     bits256 blockhash;
     bits256 hashPrevBlock;
 };
 
 extern portable_mutex_t NSPV_netmutex;
-extern uint32_t NSPV_STOP_RECEIVED,NSPV_logintime; 
-extern char NSPV_lastpeer[],NSPV_pubkeystr[],NSPV_wifstr[],NSPV_address[];
-bits256 NSPV_hdrhash(struct NSPV_equihdr *hdr);
+extern uint32_t NSPV_STOP_RECEIVED, NSPV_logintime;
+extern char NSPV_lastpeer[], NSPV_pubkeystr[], NSPV_wifstr[], NSPV_address[];
+bits256 NSPV_hdrhash(struct NSPV_equihdr* hdr);
 
-extern int32_t iguana_rwnum(int32_t rwflag,uint8_t *serialized,int32_t len,void *endianedp);
-extern int32_t iguana_rwbignum(int32_t rwflag,uint8_t *serialized,int32_t len,uint8_t *endianedp);
-extern int32_t NSPV_periodic(btc_node *node);
+extern int32_t iguana_rwnum(int32_t rwflag, uint8_t* serialized, int32_t len, void* endianedp);
+extern int32_t iguana_rwbignum(int32_t rwflag, uint8_t* serialized, int32_t len, uint8_t* endianedp);
+extern int32_t NSPV_periodic(btc_node* node);
 extern int32_t check_headers(int32_t dispflag);
-extern void komodo_nSPVresp(btc_node *from,uint8_t *response,int32_t len);
-extern uint32_t NSPV_blocktime(btc_spv_client *client,int32_t hdrheight);
-extern int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex);
-extern int32_t is_hexstr(char *str,int32_t n);
-extern int32_t NSPV_rwequihdr(int32_t rwflag,uint8_t *serialized,struct NSPV_equihdr *ptr,int32_t addlenflag);
-extern bits256 NSPV_sapling_sighash(btc_tx *tx,int32_t vini,int64_t spendamount,uint8_t *spendscript,int32_t spendlen);
+extern void komodo_nSPVresp(btc_node* from, uint8_t* response, int32_t len);
+extern uint32_t NSPV_blocktime(btc_spv_client* client, int32_t hdrheight);
+extern int32_t decode_hex(uint8_t* bytes, int32_t n, char* hex);
+extern int32_t is_hexstr(char* str, int32_t n);
+extern int32_t NSPV_rwequihdr(int32_t rwflag, uint8_t* serialized, struct NSPV_equihdr* ptr, int32_t addlenflag);
+extern bits256 NSPV_sapling_sighash(btc_tx* tx, int32_t vini, int64_t spendamount, uint8_t* spendscript, int32_t spendlen);
 
 extern int32_t IS_IN_SYNC;
-extern uint32_t NSPV_logintime,NSPV_tiptime;
-extern char NSPV_lastpeer[64],NSPV_address[64],NSPV_wifstr[64],NSPV_pubkeystr[67],NSPV_symbol[64];
-extern btc_spv_client *NSPV_client;
-extern const btc_chainparams *NSPV_chain;
+extern uint32_t NSPV_logintime, NSPV_tiptime;
+extern char NSPV_lastpeer[64], NSPV_address[64], NSPV_wifstr[64], NSPV_pubkeystr[67], NSPV_symbol[64];
+extern btc_spv_client* NSPV_client;
+extern const btc_chainparams* NSPV_chain;
 
 extern btc_key NSPV_key;
 extern btc_pubkey NSPV_pubkey;
@@ -271,18 +278,42 @@ extern struct NSPV_spentinfo NSPV_spentresult;
 extern struct NSPV_ntzsresp NSPV_ntzsresult;
 extern struct NSPV_ntzsproofresp NSPV_ntzsproofresult;
 extern struct NSPV_txproof NSPV_txproofresult;
-extern struct NSPV_broadcastresp NSPV_broadcastresult;
+//extern struct NSPV_broadcastresp NSPV_broadcastresult;  // now stored in nodegroup
 
 extern struct NSPV_ntzsresp NSPV_ntzsresp_cache[NSPV_MAXVINS];
 extern struct NSPV_ntzsproofresp NSPV_ntzsproofresp_cache[NSPV_MAXVINS * 2];
 extern struct NSPV_txproof NSPV_txproof_cache[NSPV_MAXVINS * 10];
 
-// validation 
+// validation
 extern struct NSPV_ntz NSPV_lastntz;
-extern struct NSPV_header NSPV_blockheaders[128]; // limitation here is that 100 block history is maximum. no nota for 100 blocks and we cant sync back to the notarizatio, we can wait for the next one. 
+extern struct NSPV_header NSPV_blockheaders[128]; // limitation here is that 100 block history is maximum. no nota for 100 blocks and we cant sync back to the notarizatio, we can wait for the next one.
 extern int32_t NSPV_num_headers;
-extern int32_t NSPV_hdrheight_counter,NSPV_longestchain;
+extern int32_t NSPV_hdrheight_counter, NSPV_longestchain;
 extern int32_t IS_IN_SYNC;
-extern int64_t NSPV_totalsent,NSPV_totalrecv;
+extern int64_t NSPV_totalsent, NSPV_totalrecv;
+
+cJSON* NSPV_remoterpccall(btc_spv_client* client, char* method, cJSON* request);
+cJSON* NSPV_login(const btc_chainparams* chain, char* wifstr);
+cJSON* NSPV_broadcast(btc_spv_client* client, char* hex);
+
+const btc_chainparams* NSPV_coinlist_scan(char* symbol, const btc_chainparams* template);
+void* NSPV_rpcloop(void* args);
+
+bool NSPV_SignTx(btc_tx* mtx, int32_t vini, int64_t utxovalue, cstring* scriptPubKey, uint32_t nTime);
+
+cstring* FinalizeCCtx(/*btc_spv_client* client,*/ cJSON* txdata, char* errorout /*=NSPV_MAXERRORLEN*/);
+btc_tx* btc_tx_decodehex(char* hexstr);
+cstring* btc_tx_to_cstr(btc_tx* tx);
+void reverse_hexstr(char* str);
+void expand_ipbits(char* ipaddr, uint64_t ipbits);  // moved to nSPV_utils.h because of shared use in libnspv.so (with no rpcloop)
+int portable_pton(int af, char* src, void* dst);    // moved to nSPV_utils.h
+
+bits256 bits256_rev(bits256 hash);
+btc_tx_in* btc_tx_vin(btc_tx* tx, int32_t vini);
+btc_tx_out* btc_tx_vout(btc_tx* tx, int32_t v);
+void write_compact_size_and_msg(uint8_t **ppmsg, uint32_t *pmsg_len, uint8_t *var, uint64_t var_len);
+
+
+//void nspv_log_message(const char *format, ...);
 
 #endif // KOMODO_NSPV_DEFSH

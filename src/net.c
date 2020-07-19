@@ -34,16 +34,56 @@
 
 #include <nSPV_defs.h>
 
+#if defined(LIBNSPV_BUILD)
+#if defined(__ANDROID__) || defined(ANDROID) 
+#include <stdarg.h>
+#include <android/log.h>
+#endif
+#endif
+
 static const int BTC_PERIODICAL_NODE_TIMER_S = 5;
 static const int BTC_PING_INTERVAL_S = 180;
 static const int BTC_CONNECT_TIMEOUT_S = 10;
 
+/*
+#if defined(LIBNSPV_BUILD)
+#if !defined(__ANDROID__) && !defined(ANDROID)
+// for the lib logging is to a file
+FILE *nspv_get_fdebug()
+{
+    static FILE *fdebug = NULL;
+    // TODO: make fdebug open multithreaded 
+    if (fdebug == NULL) {
+        fdebug = fopen("nspv-debug.log", "a");
+    }
+    return fdebug;
+}
+#endif
+#endif
+*/
+
+FILE *nspv_get_fdebug();
+
+// callback for logging debug messages
 int net_write_log_printf(const char* format, ...)
 {
     va_list args;
     va_start(args, format);
+#if defined(LIBNSPV_BUILD)
+#if defined(__ANDROID__) || defined(ANDROID)
+    __android_log_vprint(ANDROID_LOG_DEBUG, "libnspv", format, args);
+#else
+    // for shared object lib print to debug file
+    FILE *fdebug = nspv_get_fdebug();
+    if (fdebug != NULL) {
+        vfprintf(fdebug, format, args);
+        fflush(fdebug);
+    }
+#endif
+#else
     printf("DEBUG :");
     vprintf(format, args);
+#endif
     va_end(args);
     return 1;
 }
@@ -154,6 +194,7 @@ void node_periodical_timer(int fd, short event, void* ctx)
         node->time_started_con = 0;
         node->state |= NODE_ERRORED;
         node->state |= NODE_TIMEOUT;
+        node->nodegroup->log_write_cb("node %d %s connection timeout %d\n", node->nodeid, node->ipaddr, BTC_CONNECT_TIMEOUT_S);
         btc_node_connection_state_changed(node);
     }
 
@@ -189,21 +230,18 @@ void event_cb(struct bufferevent* ev, short type, void* ctx)
         node->state |= NODE_DISCONNECTED;
         if ((type & BEV_EVENT_EOF) != 0)
         {
-            //fprintf(stderr,"Disconnected from the remote peer %d.\n", node->nodeid);
             node->nodegroup->log_write_cb("Disconnected from the remote peer %d.\n", node->nodeid);
             node->state |= NODE_DISCONNECTED_FROM_REMOTE_PEER;
         }
         else
         {
-            //fprintf(stderr,"Error connecting to node %d.\n", node->nodeid);
             node->nodegroup->log_write_cb("Error connecting to node %d.\n", node->nodeid);
         }
         btc_node_connection_state_changed(node);
     }
     else if (type & BEV_EVENT_CONNECTED)
     {
-        fprintf(stderr,"Connected to node %d %s\n", node->nodeid,node->ipaddr);
-        node->nodegroup->log_write_cb("Successfull connected to node %d.\n", node->nodeid);
+        node->nodegroup->log_write_cb("Successfully connected to node %d.\n", node->nodeid);
         node->state |= NODE_CONNECTED;
         node->state &= ~NODE_CONNECTING;
         node->state &= ~NODE_ERRORED;
@@ -266,11 +304,9 @@ btc_bool btc_node_missbehave(btc_node* node)
 
 void btc_node_disconnect(btc_node* node)
 {
-    //fprintf(stderr,"btc_node_disconnect");
     if ((node->state & NODE_CONNECTED) == NODE_CONNECTED || (node->state & NODE_CONNECTING) == NODE_CONNECTING)
     {
         node->nodegroup->log_write_cb("Disconnect node %d\n", node->nodeid);
-        fprintf(stderr,"Disconnect node %d %s\n", node->nodeid,node->ipaddr);
     }
     /* release buffer and timer event */
     btc_node_release_events(node);
@@ -308,6 +344,8 @@ btc_node_group* btc_node_group_new(const btc_chainparams* chainparams)
     node_group->chainparams = (chainparams ? chainparams : &btc_chainparams_main);
     node_group->parse_cmd_cb = NULL;
     node_group->NSPV_num_connected_nodes = 0;
+    node_group->NSPV_broadcastresult_ptr = calloc(1, sizeof(struct NSPV_broadcastresp));
+    node_group->NSPV_remoterpcresult_ptr = calloc(1, sizeof(struct NSPV_remoterpcresp));
     strcpy(node_group->clientstr, "libnspv 0.1");
 
     /* nullify callbacks */
@@ -340,6 +378,12 @@ void btc_node_group_free(btc_node_group* group)
     if (group->nodes) {
         vector_free(group->nodes, true);
     }
+
+    if (group->NSPV_broadcastresult_ptr)
+        free(group->NSPV_broadcastresult_ptr);
+
+    if (group->NSPV_remoterpcresult_ptr)
+        free(group->NSPV_remoterpcresult_ptr);    
     btc_free(group);
 }
 
@@ -351,9 +395,9 @@ void btc_node_group_event_loop(btc_node_group* group)
 btc_node *btc_node_group_add_node(btc_node_group* group, btc_node* node)
 {
     size_t j;
-    for ( j = 0; j < group->nodes->len; j++) {
+    for (j = 0; j < group->nodes->len; j++) {
         btc_node* existing_node = vector_idx(group->nodes, j);
-        if ( memcmp(&((struct sockaddr_in*)&existing_node->addr)->sin_addr, &((struct sockaddr_in*)&node->addr)->sin_addr, sizeof(&((struct sockaddr_in*)&existing_node->addr)->sin_addr)) == 0 ) 
+        if (memcmp(&((struct sockaddr_in*)&existing_node->addr)->sin_addr, &((struct sockaddr_in*)&node->addr)->sin_addr, sizeof(&((struct sockaddr_in*)&existing_node->addr)->sin_addr)) == 0)
             return(existing_node);
     }
     vector_add(group->nodes, node);
@@ -381,9 +425,12 @@ btc_bool btc_node_group_connect_next_nodes(btc_node_group* group)
         return true;
      
     connect_amount = connect_amount*3;
+    // group->log_write_cb("%s number of needed nodes to connect %d\n", __func__, connect_amount);  // unneeded log
+
     /* search for a potential node that has not errored and is not connected or in connecting state */
     for (size_t i = 0; i < group->nodes->len; i++) {
         btc_node* node = vector_idx(group->nodes, i);
+        node->nodegroup->log_write_cb("%s checking node %d %s to connect, state 0x%08x\n", __func__, node->nodeid, node->ipaddr, node->state);
         if (
             !((node->state & NODE_CONNECTED) == NODE_CONNECTED) &&
             !((node->state & NODE_CONNECTING) == NODE_CONNECTING) &&
@@ -405,13 +452,13 @@ btc_bool btc_node_group_connect_next_nodes(btc_node_group* group)
             struct timeval tv;
             tv.tv_sec = BTC_PERIODICAL_NODE_TIMER_S;
             tv.tv_usec = 0;
-            node->timer_event = event_new(group->event_base, 0, EV_TIMEOUT | EV_PERSIST,node_periodical_timer,(void*)node);
+            node->timer_event = event_new(group->event_base, 0, EV_TIMEOUT | EV_PERSIST, node_periodical_timer,(void*)node);
             event_add(node->timer_event, &tv);
             node->state |= NODE_CONNECTING;
             connected_at_least_to_one_node = true;
 
             node->nodegroup->log_write_cb("Trying to connect to %d...\n", node->nodeid);
-            fprintf(stderr,"Trying to connect to %d %s\n", node->nodeid,node->ipaddr);
+            //fprintf(stderr,"Trying to connect to %d %s\n", node->nodeid,node->ipaddr);
 
             connect_amount--;
             if (connect_amount <= 0)
@@ -428,7 +475,7 @@ void btc_node_connection_state_changed(btc_node *node)
         node->nodegroup->node_connection_state_changed_cb(node);
 
     if ((node->state & NODE_ERRORED) == NODE_ERRORED) {
-        btc_node_release_events(node);
+        btc_node_release_events(node);   // when all node release their events, the event_loop is finished 
 
         // connect to more nodes are required
         btc_bool should_connect_to_more_nodes = true;
@@ -442,10 +489,12 @@ void btc_node_connection_state_changed(btc_node *node)
     {
         if ((node->state & NODE_CONNECTED) == NODE_CONNECTED || (node->state & NODE_CONNECTING) == NODE_CONNECTING)
         {
-            //fprintf(stderr,"misbehaved\n");
+            node->nodegroup->log_write_cb("node %s misbehaved\n", node->ipaddr);
             btc_node_disconnect(node);
         }
-    } else btc_node_send_version(node);
+    } 
+    else 
+        btc_node_send_version(node);
 }
 
 void btc_node_send(btc_node* node, cstring* data)
@@ -455,11 +504,14 @@ void btc_node_send(btc_node* node, cstring* data)
 
     //portable_mutex_lock(&NSPV_netmutex);
     //fprintf(stderr,"sending message to node %d: %s\n", node->nodeid, data->str+4);
-    bufferevent_write(node->event_bev, data->str, data->len);
+    int retcode = bufferevent_write(node->event_bev, data->str, data->len);
+
+    // no point to call bufferevent_flush, socket events do not support this:
+
     char* dummy = data->str + 4;
     //fprintf(stderr,"sent message to node %d: %s\n", node->nodeid, data->str+4);
     //portable_mutex_unlock(&NSPV_netmutex);
-    node->nodegroup->log_write_cb("sending message to node %d: %s\n", node->nodeid, dummy);
+    node->nodegroup->log_write_cb("sending message to node %d: %s, retcode %d\n", node->nodeid, dummy, retcode);
 }
 
 void btc_node_send_version(btc_node* node)
@@ -512,9 +564,9 @@ int btc_node_parse_message(btc_node* node, btc_p2p_msg_hdr* hdr, struct const_bu
             if (!btc_p2p_msg_version_deser(&v_msg_check, buf)) {
                 return btc_node_missbehave(node);
             }
-            if ( node->nodegroup->chainparams->nSPV != 0 && (v_msg_check.services & NODE_NSPV) == 0 )
+            if (node->nodegroup->chainparams->nSPV != 0 && (v_msg_check.services & NODE_NSPV) == 0)
             {
-                fprintf(stderr,"nServices.%x disconnect from node %d: %s (%d)\n",(uint32_t)v_msg_check.services, node->nodeid, v_msg_check.useragent, v_msg_check.start_height);
+                node->nodegroup->log_write_cb("nServices.%x disconnect from node %d: %s (%d)\n",(uint32_t)v_msg_check.services, node->nodeid, v_msg_check.useragent, v_msg_check.start_height);
                 btc_node_disconnect(node);
             }
             if ((v_msg_check.services & BTC_NODE_NETWORK) != BTC_NODE_NETWORK)
@@ -542,6 +594,9 @@ int btc_node_parse_message(btc_node* node, btc_p2p_msg_hdr* hdr, struct const_bu
             cstring* pongmsg = btc_p2p_message_new(node->nodegroup->chainparams->netmagic, BTC_MSG_PONG, &nonce, 8);
             btc_node_send(node, pongmsg);
             cstr_free(pongmsg, true);
+        }
+        else if (strcmp(hdr->command, "reject") == 0) {
+            node->nodegroup->log_write_cb("Rejected by peer %d, check protocol version\n", node->nodeid);
         }
     }
 

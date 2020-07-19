@@ -63,6 +63,10 @@ typedef struct btc_node_group_ {
     int32_t NSPV_num_connected_nodes;
     const btc_chainparams* chainparams;
 
+    // nspv request result objects (added in node_group to prevent concurrent use):
+    void *NSPV_remoterpcresult_ptr;
+    void *NSPV_broadcastresult_ptr;  
+
     /* callbacks */
     int (*log_write_cb)(const char* format, ...); /* log callback, default=printf */
     btc_bool (*parse_cmd_cb)(struct btc_node_* node, btc_p2p_msg_hdr* hdr, struct const_buffer* buf);
