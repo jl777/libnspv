@@ -108,7 +108,6 @@ jobs:
                  libssl-dev -y
         sudo python3 -m pip install --upgrade pip
         sudo python3 -m pip install -r ./rpctest/requirements.txt
-        ls -la
 
     - name: Tests (Linux)
       env:
@@ -116,9 +115,6 @@ jobs:
         ADDRESS: ${{ secrets.ADDRESS }}
         CHAIN: ${{ secrets.CHAIN }}
       run: |
-        ls -la
-        ls -la nspv-linux
-        mv nspv-linux/nspv-linux.tar.gz .
         tar xzvf nspv-linux.tar.gz
         python3 ./rpctest/actions.py
 
@@ -196,7 +192,6 @@ jobs:
           python3 -m pip install --upgrade setuptools
           python3 -m pip install --upgrade pip
           python3 -m pip install -r ./rpctest/requirements.txt
-          ls -la
 
       - name: Tests (MacOS)
         env:
@@ -204,9 +199,6 @@ jobs:
           ADDRESS: ${{ secrets.ADDRESS }}
           CHAIN: ${{ secrets.CHAIN }}
         run: |
-          ls -la
-          ls -la nspv-linux
-          mv nspv-macos/nspv-macos.tar.gz .
           tar xzvf nspv-macos.tar.gz
           python3 ./rpctest/actions.py
 
@@ -275,8 +267,6 @@ jobs:
           ADDRESS: ${{ secrets.ADDRESS }}
           CHAIN: ${{ secrets.CHAIN }}
         run: |
-          dir
-          move nspv-win\nspv-win.zip
           7z e nspv-win.zip
           python.exe -m pip install --upgrade setuptools
           python.exe -m pip install --upgrade pip
