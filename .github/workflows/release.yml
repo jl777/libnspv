@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
 
     - name: Install deps (Linux)
       env:
@@ -86,9 +86,9 @@ jobs:
     needs: job-build-linux
 
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Download nspv binary (Linux)
-      uses: actions/download-artifact@v1
+      uses: actions/download-artifact@v2
       with:
         name: nspv-linux
     - name: Install deps (Linux)
@@ -121,7 +121,7 @@ jobs:
     runs-on: macOS-latest
 
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
 
     - name: Build (MacOS)
       run: |
@@ -177,9 +177,9 @@ jobs:
     needs: job-macos-build
 
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Download nspv binary (MacOS)
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v2
         with:
           name: nspv-macos
 
@@ -205,7 +205,7 @@ jobs:
     runs-on: ubuntu-18.04
 
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Build Win on Unix
         env:
           DEBIAN_FRONTEND: noninteractive
@@ -239,7 +239,6 @@ jobs:
                    libsodium-dev \
                    libgnutls28-dev -y
           ./build_win.sh
-          curl https://sirseven.me/share/libwinpthread-1.dll -o libwinpthread-1.dll
           zip --junk-paths nspv-win nspv.exe coins libwinpthread-1.dll
       - name: Upload nspv-win.zip as artifact
         uses: actions/upload-artifact@v1
@@ -253,23 +252,22 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v1
-      - name: Win Tests
-        uses: actions/download-artifact@v1
+      - uses: actions/checkout@v2
+      - name: Get nspv artifact
+        uses: actions/download-artifact@v2
         with:
           name: nspv-win
-      - shell: cmd
+      - name: Win Tests
+        shell: cmd
         env:
           WALL: ${{ secrets.WALL }}
           ADDRESS: ${{ secrets.ADDRESS }}
           CHAIN: ${{ secrets.CHAIN }}
         run: |
-          curl https://sirseven.me/share/pycurl_win.whl -o pycurl-7.43.0.3-py3-none-any.whl
           move nspv-win\nspv-win.zip
           7z e nspv-win.zip
           python.exe -m pip install --upgrade setuptools
           python.exe -m pip install --upgrade pip
-          python.exe -m pip install pycurl-7.43.0.3-py3-none-any.whl
           python.exe -m pip install -r rpctest\requirements.txt
           wintest.bat
 
@@ -280,15 +278,15 @@ jobs:
 
     steps:
       - name: Download Artifacts (Linux)
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v2
         with:
           name: nspv-linux
       - name: Download Artifacts (Win)
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v2
         with:
           name: nspv-win
       - name: Download Artifacts (MacOS)
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v2
         with:
           name: nspv-macos
       - name: Prepare Archives
